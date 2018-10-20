@@ -1,0 +1,16 @@
+.marker {
+  color: white;
+  text-align: center;
+}
+
+.marker--green {
+  background-color: #2ECC40;
+}
+
+.marker--orange {
+  background-color: #FF851B;
+}
+
+.marker--red {
+  background-color: #FF4136;
+}

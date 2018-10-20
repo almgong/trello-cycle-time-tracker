@@ -1,0 +1,21 @@
+{
+  "name": "Trello Cycle Time Tracker",
+  "version": "1.0",
+  "description": "Stay on top of your team's cycle time with visual indications of card age and progression.",
+  "background": {
+    "scripts": ["src/background_scripts/main.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_popup": "src/popup.html"
+  },
+  "content_scripts": [{
+    "matches": ["https://trello.com/b/*"],
+    "css": ["src/content_scripts/main.css"],
+    "js": ["assets/js/jquery-3.3.1.min.js", "src/content_scripts/main.js"]
+  }],
+  "permissions": [
+    "storage"
+  ],
+  "manifest_version": 2
+}
