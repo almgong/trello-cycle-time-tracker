@@ -4,9 +4,10 @@
 
 var STORAGE_SETTINGS_KEY = 'settings';
 var DEFAULT_SETTINGS = {
-  enabled: true,
+  enabled: false,
   targetCycleTimeMinutes: 60,
-  cycleTimeRelatedColumns: []
+  cycleTimeRelatedColumns: [], // [{ id: '...', name: '...'  }, ...]
+  startingColumnId: null
 };
 
 chrome.runtime.onInstalled.addListener(function() {
@@ -38,7 +39,8 @@ var REQUEST_TYPES_ENUM = {
   UPDATE_SETTINGS: 1,
   GET_CURRENT_TRELLO_LISTS_FROM_BOARD: 2,
   ENABLE_EXTENSION: 3,
-  DISABLE_EXTENSION: 4
+  DISABLE_EXTENSION: 4,
+  RECALCULATE: 5
 };
 
 /**

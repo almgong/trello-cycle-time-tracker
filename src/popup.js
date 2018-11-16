@@ -1,9 +1,11 @@
 $(function() {
   var CHECKBOX_CONTAINER_SELECTOR = '.js-list-checkbox-container';
+  var RADIO_CONTAINER_SELECTOR = '.js-list-radios-container';
   var ENABLE_EXTENSION_CONTAINER_SELECTOR = '.js-enable-extension-container';
   var SUBMIT_BUTTON_SELECTOR = '#submit_settings';
   var TARGET_CT_SELECTOR = '#target_ct';
   var FLASH_MESSAGE_CONTAINER_SELECTOR = '#flash_message';
+  var RECAlCULATE_BUTTON_SELECTOR = '#recalculate_btn';
   var requestTypes = {};
 
   function sendMessage(message, onResponse) {
@@ -16,23 +18,44 @@ $(function() {
     });
   }
 
-  function renderListCheckboxFor(selectedColumns, listHeading) {
+  function renderListCheckboxFor(selectedColumns, list) {
     var formCheckDiv = document.createElement('div');
     formCheckDiv.classList = ['form-check'];
 
     var checkboxInput = document.createElement('input');
     checkboxInput.classList = ['form-check-input'];
     checkboxInput.type = 'checkbox';
-    checkboxInput.name = listHeading;
-    checkboxInput.checked = selectedColumns.indexOf(listHeading) !== -1;
+    checkboxInput.name = list.name;
+    checkboxInput.value = list.id;
+    checkboxInput.checked = selectedColumns.map(function (column) { return column.id }).indexOf(list.id) !== -1;
 
     var checkboxLabel = document.createElement('label');
-    checkboxLabel.innerText = listHeading;
+    checkboxLabel.innerText = list.name;
 
     formCheckDiv.appendChild(checkboxInput);
     formCheckDiv.appendChild(checkboxLabel);
 
     $(CHECKBOX_CONTAINER_SELECTOR).append(formCheckDiv);
+  }
+
+  function renderListRadiosFor(selectedStartingColumn, list) {
+    var formCheckDiv = document.createElement('div');
+    formCheckDiv.classList = ['form-check'];
+
+    var radioInput = document.createElement('input');
+    radioInput.classList = ['form-check-input'];
+    radioInput.type = 'radio';
+    radioInput.name = 'starting_column';
+    radioInput.value = list.id;
+    radioInput.checked = list.id === selectedStartingColumn;
+
+    var radioLabel = document.createElement('label');
+    radioLabel.innerText = list.name;
+
+    formCheckDiv.appendChild(radioInput);
+    formCheckDiv.appendChild(radioLabel);
+
+    $(RADIO_CONTAINER_SELECTOR).append(formCheckDiv);
   }
 
   function renderExtensionOnOffRadios(enabled) {
@@ -57,11 +80,18 @@ $(function() {
   function renderUi(settings, trelloLists) {
     renderExtensionOnOffRadios(settings.enabled);
 
-    trelloLists.forEach(function(listHeading) {
-      renderListCheckboxFor(settings.cycleTimeRelatedColumns, listHeading);
+    trelloLists.forEach(function(list) {
+      renderListCheckboxFor(settings.cycleTimeRelatedColumns, list);
+      renderListRadiosFor(settings.startingColumnId, list);
     });
 
     $(TARGET_CT_SELECTOR).val(settings.targetCycleTimeMinutes / 60);
+
+    $(RECAlCULATE_BUTTON_SELECTOR).on('click', function(e) {
+      e.preventDefault();
+
+      sendMessageToCurrentTab({ type: requestTypes.RECALCULATE });
+    });
   }
 
   function renderFlashMessage(content, type) {
@@ -72,7 +102,7 @@ $(function() {
 
   function serializeCheckboxes() {
     return $(CHECKBOX_CONTAINER_SELECTOR + ' .form-check-input:checked').map(function() {
-      return $(this).attr('name');
+      return { id: $(this).val(), name: $(this).attr('name') };
     }).get();
   }
 
@@ -80,7 +110,8 @@ $(function() {
     var formValues = {
       enabled: $('#enable_extension__on').prop('checked'),
       targetCycleTimeMinutes: (+$('#target_ct').val() || 1) * 60,
-      cycleTimeRelatedColumns: serializeCheckboxes()
+      cycleTimeRelatedColumns: serializeCheckboxes(),
+      startingColumnId: $(RADIO_CONTAINER_SELECTOR + ' .form-check-input:checked').val() || null
     };
 
     return formValues;
