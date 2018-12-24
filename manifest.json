@@ -12,7 +12,13 @@
   "content_scripts": [{
     "matches": ["https://trello.com/b/*"],
     "css": ["src/content_scripts/main.css"],
-    "js": ["assets/js/jquery-3.3.1.min.js", "src/content_scripts/main.js"]
+    "js": [
+      "assets/js/jquery-3.3.1.min.js",
+      "assets/js/promise-polyfill.min.js",
+      "assets/js/fetch.umd.min.js",
+      "assets/js/trello.min.js",
+      "src/content_scripts/main.js"
+    ]
   }],
   "permissions": [
     "storage"
