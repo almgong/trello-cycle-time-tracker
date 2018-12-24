@@ -6,7 +6,8 @@
 </head>
 <body>
   <div id="main" class="container">
-    <h2>Settings</h2>
+    <br />
+    <h2>Cycle time tracker</h2>
     <div id="flash_message"></div>
     <div class="row">
       <!-- dynamically generated -->
@@ -15,16 +16,17 @@
 
     <hr />
 
-    <h2>Actions</h2>
+    <h3>Actions</h3>
     <div id="actions">
       <button id="recalculate_btn">Recalculate Current Board</button>
     </div>
 
     <hr />
 
+    <h3>Settings for Current Board</h3>
     <div class="row">
       <div class="col-sm">
-        <label for="target_ct">Target cycle time in hrs (per card, defaults to 1)</label>
+        <label for="target_ct"><b>Target cycle time in hrs (per card, defaults to 1)</b></label>
         <input id="target_ct" type="text" class="form-control" />
       </div>
     </div>
@@ -32,18 +34,23 @@
     <br/>
 
     <div class="row">
-      <!-- dynamically generated -->
-      <div class="col-sm js-list-checkbox-container">
-        <label>Select columns to track</label>
-      </div>
-
-      <div class="col-sm js-list-radios-container">
-        <label>Select starting column</label>
+      <div class="col-sm js-starting-column-container">
+        <label><b>Select starting column (not yet started)</b></label>
       </div>
     </div>
+
+    <br />
+
     <div class="row">
+      <!-- dynamically generated -->
+      <div class="col-sm js-list-checkbox-container">
+        <label><b>Select columns to track</b></label>
+      </div>
+    </div>
+
+    <div class="row mb-4">
       <div class="col-sm">
-        <button id="submit_settings" class="btn btn-primary">Ok</Button>
+        <button id="submit_settings" class="btn btn-primary">Save</Button>
       </div>
     </div>
   </div>
