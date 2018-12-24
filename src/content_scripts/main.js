@@ -118,13 +118,13 @@ function ContentManager(updateIntervalMs) {
 ContentManager.prototype.initialize = function() {
   var self = this;
   self.loaded = false;
+  self.boardId = self.parseBoardIdFromCurrentUrl();
 
   // retrieve request type enum and persisted settings
   sendMessage({ type: 'help' }, function(typeResult) {
     self.requestTypes = typeResult;
-    sendMessage({ type: self.requestTypes.GET_SETTINGS }, function(settingsResult) {
+    sendMessage({ type: self.requestTypes.GET_SETTINGS, data: { boardId: self.boardId } }, function(settingsResult) {
       self.settings = settingsResult;
-      self.boardId = self.parseBoardIdFromCurrentUrl();
       self.cardIdToTimeStartedMap = self.getSavedTimestamps();
       self.loaded = true;
 
@@ -436,13 +436,16 @@ manager.initialize();
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   switch(request.type) {
+    case manager.requestTypes.GET_CURRENT_BOARD_ID:
+      sendResponse(manager.boardId);
+      break;
     case manager.requestTypes.GET_CURRENT_TRELLO_LISTS_FROM_BOARD:
       manager.retrieveTrelloLists(function (lists) {
         sendResponse(lists);
       });
       break;
     case manager.requestTypes.UPDATE_SETTINGS:
-      manager.updateFromNewSettings(request.data);
+      manager.updateFromNewSettings(request.data.newSettings);
       break;
     case manager.requestTypes.ENABLE_EXTENSION:
       manager.start();
