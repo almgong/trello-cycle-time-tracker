@@ -68,13 +68,18 @@ function getActionsForCard(cardId, cb) {
 }
 
 // returns the timestamp of the most recent time that the card
-// entered one of the specified lists
-function parseMostRecentEnterTimeToListsFromActions(actions, listIds) {
-  var time = actions[0] ? new Date(actions[0].date) : new Date();
+// entered a list with the specified suffix
+function parseMostRecentEnterTimeToListsWithSuffix(actions, suffix) {
+  var time;
+  if (actions.length > 0) {
+    time = new Date(actions[actions.length - 1].date);
+  } else {
+    time = new Date();
+  }
 
   for (var i = 0; i < actions.length; i++) {
     if (actions[i].data && actions[i].data.listAfter && actions[i].data.listBefore) {
-      if (listIds.indexOf(actions[i].data.listAfter.id) !== -1 && listIds.indexOf(actions[i].data.listBefore.id) === -1) {
+      if (actions[i].data.listAfter.name.endsWith(suffix) && !actions[i].data.listBefore.name.endsWith(suffix)) {
         time = new Date(actions[i].date);
         break;
       }
@@ -85,13 +90,25 @@ function parseMostRecentEnterTimeToListsFromActions(actions, listIds) {
 }
 
 // returns the timestamp of the most recent time that the card
-// exited one of the specified lists
-function parseMostRecentExitTimeFromListsFromActions(actions, listIds) {
-  var time = actions[0] ? new Date(actions[0].date) : new Date();
+// left a list with any of the specified suffixes
+function parseMostRecentExitTimeFromListsWithSuffixes(actions, suffixes) {
+  var time;
+  if (actions.length > 0) {
+    time = new Date(actions[actions.length - 1].date);
+  } else {
+    time = new Date();
+  }
+
+  var endsWithAny = function(str, suffixes) {
+    return suffixes.some(function(suffix) {
+      return str.endsWith(suffix);
+    });
+  }
 
   for (var i = 0; i < actions.length; i++) {
     if (actions[i].data && actions[i].data.listAfter && actions[i].data.listBefore) {
-      if (listIds.indexOf(actions[i].data.listAfter.id) === -1 && listIds.indexOf(actions[i].data.listBefore.id) !== -1) {
+      if(!endsWithAny(actions[i].data.listAfter.name, suffixes)
+          && endsWithAny(actions[i].data.listBefore.name, suffixes)) {
         time = new Date(actions[i].date);
         break;
       }
@@ -164,12 +181,12 @@ ContentManager.prototype.update = function() {
           return $(this).text() === listWithCards.name;
         }).closest(TRELLO_LIST_SELECTOR);
 
-        var cycleTimeListIds = self.settings.cycleTimeRelatedColumns.map(function (l) { return l.id });
-        var isCycleTimeList = cycleTimeListIds.indexOf(listWithCards.id) !== -1;
+        var unstartedListSuffix = self.settings.unstartedListSuffix;
+        var startedListSuffix = self.settings.startedListSuffix;
 
-        if (isCycleTimeList) {
+        if (listWithCards.name.endsWith(startedListSuffix)) {
           self.updateInProgressCardsInList($currentList, listWithCards);
-        } else if (listWithCards.id === self.settings.startingColumnId) { // non starting column, i.e. completed
+        } else if (listWithCards.name.endsWith(unstartedListSuffix)) {
           self.resetCardsInList($currentList);
         } else {
           self.markCardsInListAsCompleted($currentList, listWithCards);
@@ -204,7 +221,6 @@ ContentManager.prototype.retrieveTrelloLists = function(cb) {
 };
 
 ContentManager.prototype.retrieveTrelloActionsForCard = function(cardId, cb) {
-  var self = this;
   this.executor.execute(function() {
     getActionsForCard(cardId, function(actions) {
 
@@ -355,8 +371,7 @@ ContentManager.prototype.assignStartTimesForCardsInList = function (listWithCard
 
     if (!(self.cardIdToTimeStartedMap[cardId] && self.cardIdToTimeStartedMap[cardId].startedAt)) {
       self.retrieveTrelloActionsForCard(card.id, function(actions) {
-        var cycleTimeListIds = self.settings.cycleTimeRelatedColumns.map(function (list) { return list.id });
-        var startTime = parseMostRecentEnterTimeToListsFromActions(actions, cycleTimeListIds);
+        var startTime = parseMostRecentEnterTimeToListsWithSuffix(actions, self.settings.startedListSuffix);
 
         self.cardIdToTimeStartedMap[cardId] = self.cardIdToTimeStartedMap[cardId] || {};
         self.cardIdToTimeStartedMap[cardId].startedAt = startTime;
@@ -386,16 +401,20 @@ ContentManager.prototype.assignCompletedTimesForCardsInList = function (listWith
 
     if (!self.cardIdToTimeStartedMap[cardId] || (!self.cardIdToTimeStartedMap[cardId].completedAt)) {
       self.retrieveTrelloActionsForCard(card.id, function(actions) {
-        var cycleTimeListIds = self.settings.cycleTimeRelatedColumns.map(function (list) { return list.id });
-        var exitTime = parseMostRecentExitTimeFromListsFromActions(actions, cycleTimeListIds.concat(self.settings.startingColumnId));
+        var exitTime = parseMostRecentExitTimeFromListsWithSuffixes(
+          actions,
+          [
+            self.settings.unstartedListSuffix,
+            self.settings.startedListSuffix
+          ]
+        );
 
         self.cardIdToTimeStartedMap[cardId] = self.cardIdToTimeStartedMap[cardId] || {};
         self.cardIdToTimeStartedMap[cardId].completedAt = exitTime;
 
         // ensures every completed card also has a start time
         if (!self.cardIdToTimeStartedMap[cardId].startedAt) {
-          var cycleTimeListIds = self.settings.cycleTimeRelatedColumns.map(function (list) { return list.id });
-          var startTime = parseMostRecentEnterTimeToListsFromActions(actions, cycleTimeListIds);
+          var startTime = parseMostRecentEnterTimeToListsWithSuffix(actions, self.settings.startedListSuffix);
           self.cardIdToTimeStartedMap[cardId].startedAt = startTime;
         }
 
