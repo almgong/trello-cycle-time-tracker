@@ -70,7 +70,12 @@ function getActionsForCard(cardId, cb) {
 // returns the timestamp of the most recent time that the card
 // entered a list with the specified suffix
 function parseMostRecentEnterTimeToListsWithSuffix(actions, suffix) {
-  var time = actions[0] ? new Date(actions[0].date) : new Date();
+  var time;
+  if (actions.length > 0) {
+    time = new Date(actions[actions.length - 1].date);
+  } else {
+    time = new Date();
+  }
 
   for (var i = 0; i < actions.length; i++) {
     if (actions[i].data && actions[i].data.listAfter && actions[i].data.listBefore) {
@@ -87,7 +92,12 @@ function parseMostRecentEnterTimeToListsWithSuffix(actions, suffix) {
 // returns the timestamp of the most recent time that the card
 // left a list with any of the specified suffixes
 function parseMostRecentExitTimeFromListsWithSuffixes(actions, suffixes) {
-  var time = actions[0] ? new Date(actions[0].date) : new Date();
+  var time;
+  if (actions.length > 0) {
+    time = new Date(actions[actions.length - 1].date);
+  } else {
+    time = new Date();
+  }
 
   var endsWithAny = function(str, suffixes) {
     return suffixes.some(function(suffix) {
@@ -211,7 +221,6 @@ ContentManager.prototype.retrieveTrelloLists = function(cb) {
 };
 
 ContentManager.prototype.retrieveTrelloActionsForCard = function(cardId, cb) {
-  var self = this;
   this.executor.execute(function() {
     getActionsForCard(cardId, function(actions) {
 
