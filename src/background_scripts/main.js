@@ -9,8 +9,8 @@
   *     boardId: {
   *       enabled: boolean,
   *       targetCycleTime: 60,
-  *       cycleTimeRelatedColumns: [...],
-  *       startingColumnId: '...'
+  *       unstartedListSuffix: '...',
+  *       startedListSuffix: '...'
   *     }
   *   }
   * }
@@ -22,8 +22,8 @@ var DEFAULT_SETTINGS = {
 var DEFAULT_INDIVIDUAL_BOARD_SETTINGS = {
   enabled: false,
   targetCycleTimeMinutes: 60,
-  cycleTimeRelatedColumns: [], // [{ id: '...', name: '...'  }, ...]
-  startingColumnId: null
+  unstartedListSuffix: '^',
+  startedListSuffix: '*'
 };
 
 // ensure that there are some settings for the extension

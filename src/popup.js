@@ -4,6 +4,8 @@ $(function() {
   var ENABLE_EXTENSION_CONTAINER_SELECTOR = '.js-enable-extension-container';
   var SUBMIT_BUTTON_SELECTOR = '#submit_settings';
   var TARGET_CT_SELECTOR = '#target_ct';
+  var UNSTARTED_LIST_SUFFIX_SELECTOR = '#unstarted_suffix';
+  var STARTED_LIST_SUFFIX_SELECTOR = '#started_suffix';
   var FLASH_MESSAGE_CONTAINER_SELECTOR = '#flash_message';
   var RECAlCULATE_BUTTON_SELECTOR = '#recalculate_btn';
   var requestTypes = {};
@@ -17,52 +19,6 @@ $(function() {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
       chrome.tabs.sendMessage(tabs[0].id, message, onResponse);
     });
-  }
-
-  function getBoardIdFromCurrentTab(cb) {
-    sendMessageToCurrentTab(requestTypes.GET_CURRENT_BOARD_ID, cb);
-  }
-
-  function parseBoardIdFromUrl(url) {
-    // URL is in form https://trello.com/b/WiNIc9tP/board-name => WiNIc9tP
-    return window.location.href.split('/').slice(-2)[0];
-  }
-
-  function renderListCheckboxFor(selectedColumns, list) {
-    var formCheckDiv = document.createElement('div');
-    formCheckDiv.classList = ['form-check'];
-
-    var checkboxInput = document.createElement('input');
-    checkboxInput.classList = ['form-check-input'];
-    checkboxInput.type = 'checkbox';
-    checkboxInput.name = list.name;
-    checkboxInput.value = list.id;
-    checkboxInput.checked = selectedColumns.map(function (column) { return column.id }).indexOf(list.id) !== -1;
-
-    var checkboxLabel = document.createElement('label');
-    checkboxLabel.innerText = list.name;
-
-    formCheckDiv.appendChild(checkboxInput);
-    formCheckDiv.appendChild(checkboxLabel);
-
-    $(CHECKBOX_CONTAINER_SELECTOR).append(formCheckDiv);
-  }
-
-  function renderStartingColumnSelectFor(selectedStartingColumn, lists) {
-    var selectInput = document.createElement('select');
-    selectInput.classList = ['form-control'];
-    selectInput.name = 'starting_column';
-
-    lists.forEach(function (list) {
-      var option = document.createElement('option');
-      option.value = list.id;
-      option.selected = list.id === selectedStartingColumn;
-      option.innerText = list.name;
-
-      selectInput.appendChild(option);
-    });
-
-    $(STARTING_COLUMN_SELECT_SELECTOR).append(selectInput);
   }
 
   function renderExtensionOnOffRadios(enabled) {
@@ -84,13 +40,11 @@ $(function() {
     ');
   }
 
-  function renderUi(settings, trelloLists) {
+  function renderUi(settings) {
     renderExtensionOnOffRadios(settings.enabled);
-    trelloLists.forEach(function(list) {
-      renderListCheckboxFor(settings.cycleTimeRelatedColumns, list);
-    });
-    renderStartingColumnSelectFor(settings.startingColumnId, trelloLists);
 
+    $(UNSTARTED_LIST_SUFFIX_SELECTOR).val(settings.unstartedListSuffix);
+    $(STARTED_LIST_SUFFIX_SELECTOR).val(settings.startedListSuffix);
     $(TARGET_CT_SELECTOR).val(settings.targetCycleTimeMinutes / 60);
 
     $(RECAlCULATE_BUTTON_SELECTOR).on('click', function(e) {
@@ -117,7 +71,9 @@ $(function() {
       enabled: $('#enable_extension__on').prop('checked'),
       targetCycleTimeMinutes: (+$('#target_ct').val() || 1) * 60,
       cycleTimeRelatedColumns: serializeCheckboxes(),
-      startingColumnId: $(STARTING_COLUMN_SELECT_SELECTOR + ' option:selected').val()
+      startingColumnId: $(STARTING_COLUMN_SELECT_SELECTOR + ' option:selected').val(),
+      unstartedListSuffix: $(UNSTARTED_LIST_SUFFIX_SELECTOR).val(),
+      startedListSuffix: $(STARTED_LIST_SUFFIX_SELECTOR).val()
     };
 
     return formValues;
@@ -142,13 +98,11 @@ $(function() {
     sendMessageToCurrentTab({ type: requestTypes.GET_CURRENT_BOARD_ID }, function (boardId) {
       currentBoardId = boardId;
       sendMessage({ type: typesResult.GET_SETTINGS, data: { boardId: boardId } }, function(settingsResult) {
-        sendMessageToCurrentTab({ type: typesResult.GET_CURRENT_TRELLO_LISTS_FROM_BOARD }, function(listResult) {
-          renderUi(settingsResult, listResult);
+        renderUi(settingsResult);
 
-          $(SUBMIT_BUTTON_SELECTOR).on('click', function(e) {
-            e.preventDefault();
-            submitForm();
-          });
+        $(SUBMIT_BUTTON_SELECTOR).on('click', function(e) {
+          e.preventDefault();
+          submitForm();
         });
       });
     });
